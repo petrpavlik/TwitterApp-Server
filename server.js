@@ -943,4 +943,6 @@ app.get('/streams/destroy', function (req, res) {
 
 // Launch server
 
-app.listen(4242);
+var port = process.env.PORT || 4242;
+
+app.listen(port);
