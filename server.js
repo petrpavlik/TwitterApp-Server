@@ -776,31 +776,79 @@ var streams = {};
 var azure = require('azure');
 var notificationHubService = azure.createNotificationHubService('tweetilus','Endpoint=sb://tweetilus-ns.servicebus.windows.net/;SharedSecretIssuer=owner;SharedSecretValue=d0+tn3/xILWOJE+7uyv3zbvco1BGiNME4yOGUa40jkM=');
 
-function generatePushMessage(json) {
+function generatePushMessage(json, user) {
 	
-	var event = json.event;
-	var message;
+	console.log("checking notification type");
 	
-	if (event == "block") {
-		message = "@" + json.source.screen_name + " blocked @" + json.target.screen_name;
+	if ('event' in json) {
+	
+		console.log("it's an event");
+		
+		var event = json.event;
+		var message;
+		
+		if (event == "block") {
+			message = "@" + json.source.screen_name + " blocked @" + json.target.screen_name;
+		}
+		else if (event == "unblock") {
+			message = "@" + json.source.screen_name + " unblocked @" + json.target.screen_name;
+		}
+		else if (event == "favorite") {
+			message = "@" + json.source.screen_name + " favorited \"" + json.target_object.text + '"';
+		}
+		else if (event == "unfavorite") {
+			message = "@" + json.source.screen_name + " unfavorited \"" + json.target_object.text + '"';
+		}
+		else if (event == "follow") {
+			message = "@" + json.source.screen_name + " started following @" + json.target.screen_name;
+		}
+		else if (event == "unfollow") {
+			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
+		}
+		else if (event == "retweet") {
+			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
+		}
+		else if (event == "unretweet") {
+			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
+		}
+		
+		return message;	
 	}
-	else if (event == "unblock") {
-		message = "@" + json.source.screen_name + " blocked @" + json.target.screen_name;
-	}
-	else if (event == "favorite") {
-		message = "@" + json.source.screen_name + " favorited \"" + json.target_object.text + '"';
-	}
-	else if (event == "unfavorite") {
-		message = "@" + json.source.screen_name + " unfavorited \"" + json.target_object.text + '"';
-	}
-	else if (event == "follow") {
-		message = "@" + json.source.screen_name + " started following @" + json.target.screen_name;
-	}
-	else if (event == "unfollow") {
-		message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
+	else if ('entities' in json) {
+	
+		console.log("it can be a mention or a reply");
+	
+		var mentions = json.entities.user_mentions;
+		
+		console.log("mentions is " + JSON.stringify(mentions));
+		
+		for (var i=0;i<mentions.length;i++)
+		{ 
+			var mention = mentions[i];
+			
+			console.log(JSON.stringify(mention));
+
+			if (mention.id_str == user) {
+			
+				if (json.text.indexOf("RT") === 0) {
+					
+					console.log("detected a retweet");	
+					
+					return "@" + json.user.screen_name + " retweeted: " + json.retweeted_status.text;
+				}
+				else {
+					
+					console.log("detected a mention");	
+					
+					return "@" + json.user.screen_name + " mentioned @" + mention.screen_name + ": " + json.text;
+				}
+			}
+		}
+		
+		
 	}
 	
-	return message;
+	return null;
 }
 
 function createUserStream(user, accessToken, accessTokenSecret) {
@@ -844,18 +892,19 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 				
 				if (json) {
 					
-					if ('event' in json) {
+					if ('event' in json || 'entities' in json) {
 					
 						console.log(json.source.screen_name + " " + json.event);
 						
-						var pushMessage = generatePushMessage(json);
+						var pushMessage = generatePushMessage(json, user);
 						if (pushMessage && pushMessage.length) {
 							
 							var payload={ 
 							    alert: pushMessage
 							  };
 							  
-							notificationHubService.apns.send(user, payload, 
+							console.log("sending notification to " + user);
+							notificationHubService.apns.send([user], payload, 
 							  function(error){
 							    
 							    if(!error){
@@ -864,7 +913,8 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 							    else {
 								 	console.log("notification was not sent: " + error);
 							    }
-							});			
+							});	
+									
 						}
 						
 						console.log(pushMessage);
