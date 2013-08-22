@@ -853,11 +853,11 @@ function generatePushMessage(json, user) {
 
 function createUserStream(user, accessToken, accessTokenSecret) {
 
-	var accessor = { consumerSecret: accessToken
+	var accessor = { consumerSecret: "mR06kKzyIUELyXmxBAQi5fzbcqwqPDtsqzK4vBHsE"
                    , tokenSecret   : accessTokenSecret};
     var message = { method: "GET"
                   , action: "https://userstream.twitter.com/1.1/user.json"
-                  , parameters: { oauth_consumer_key: "ip9LFL1QFBtMAeDxZhl1w", oauth_version: "1.0", oauth_token: "236800645-1eTLCf0qMEZ4tOJOjrEV7GQdUtIXv5RdagFQSf25", oauth_timestamp: OAuth.timestamp(), oauth_nonce: OAuth.nonce(11)}
+                  , parameters: { oauth_consumer_key: "ip9LFL1QFBtMAeDxZhl1w", oauth_version: "1.0", oauth_token: accessToken, oauth_timestamp: OAuth.timestamp(), oauth_nonce: OAuth.nonce(11)}
                   };
                   
     OAuth.SignatureMethod.sign(message, accessor);
