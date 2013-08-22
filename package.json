@@ -1,0 +1,14 @@
+{
+  "name": "tweetilus-push-server",
+  "version": "0.1.0",
+  "author": "Petr Pavlik <petrpavlik@me.com>",
+  "description": "iOS push server for Tweetilus",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies" : {
+    "express"   :  "*",
+    "path" :  "*",
+    "azure"    :  "*"
+  }
+}
