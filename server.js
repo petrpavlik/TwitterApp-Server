@@ -803,7 +803,7 @@ function generatePushMessage(json) {
 	return message;
 }
 
-function createUserStream(accessToken, accessTokenSecret) {
+function createUserStream(user, accessToken, accessTokenSecret) {
 
 	var accessor = { consumerSecret: accessToken
                    , tokenSecret   : accessTokenSecret};
@@ -855,7 +855,7 @@ function createUserStream(accessToken, accessTokenSecret) {
 							    alert: pushMessage
 							  };
 							  
-							notificationHubService.apns.send(null, payload, 
+							notificationHubService.apns.send(user, payload, 
 							  function(error){
 							    
 							    if(!error){
@@ -920,15 +920,17 @@ app.get('/streams/create', function (req, res) {
   
   console.log("Starting stream for '" + user + "'.");
   
-  streams[user] = createUserStream(req.query.accessToken, req.query.accessTokenSecret);
+  streams[user] = createUserStream(user, req.query.accessToken, req.query.accessTokenSecret);
   
   res.send('stream created');
 });
 
 app.get('/streams/destroy', function (req, res) {
   
+  var user = req.query.user;
+  
   if (streams[user]) {
-	  
+  	  
 	  console.log("Stream for '" + user + "' already running. Shutting it down.")
 	  streams[user].abort();
 	  streams[user] = null;
