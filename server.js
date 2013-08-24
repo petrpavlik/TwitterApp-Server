@@ -772,17 +772,18 @@ var https = require('https');
 var app = express();
 
 var streams = {};
+var serverLog = "";
 
 var azure = require('azure');
 var notificationHubService = azure.createNotificationHubService('tweetilus','Endpoint=sb://tweetilus-ns.servicebus.windows.net/;SharedSecretIssuer=owner;SharedSecretValue=d0+tn3/xILWOJE+7uyv3zbvco1BGiNME4yOGUa40jkM=');
 
 function generatePushMessage(json, user) {
 	
-	console.log("checking notification type");
+	//console.log("checking notification type");
 	
 	if ('event' in json) {
 	
-		console.log("it's an event");
+		//console.log("it's an event");
 		
 		var event = json.event;
 		var message;
@@ -805,18 +806,12 @@ function generatePushMessage(json, user) {
 		else if (event == "unfollow") {
 			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
 		}
-		else if (event == "retweet") {
-			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
-		}
-		else if (event == "unretweet") {
-			message = "@" + json.source.screen_name + " unfollowed @" + json.target.screen_name;
-		}
 		
 		return message;	
 	}
 	else if ('entities' in json) {
 	
-		console.log("it can be a mention or a reply");
+		//console.log("it can be a mention or a reply");
 	
 		var mentions = json.entities.user_mentions;
 		
@@ -832,13 +827,13 @@ function generatePushMessage(json, user) {
 			
 				if (json.text.indexOf("RT") === 0) {
 					
-					console.log("detected a retweet");	
+					//console.log("detected a retweet");	
 					
 					return "@" + json.user.screen_name + " retweeted: " + json.retweeted_status.text;
 				}
 				else {
 					
-					console.log("detected a mention");	
+					//console.log("detected a mention");	
 					
 					return "@" + json.user.screen_name + " mentioned @" + mention.screen_name + ": " + json.text;
 				}
@@ -871,15 +866,19 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 	};
 	
 	var req = https.request(options, function(res) {
-		console.log("statusCode: ", res.statusCode);
-		console.log("headers: ", res.headers);
+		
+		//console.log("statusCode: ", res.statusCode);
+		//console.log("headers: ", res.headers);
+		
+		logEvent("streaming for user " + user + " with status code " + statusCode);
 	
 		res.on('data', function(d) {
-			console.log("did receive data!");
+			
+			//console.log("did receive data!");
 			
 			if (d.length > 2) {
 				
-				console.log(d.toString('utf-8'));
+				logEvent("user " + user + " did receive data: " + d.toString('utf-8'));
 				
 				var json;
 	
@@ -887,7 +886,7 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 				  json = JSON.parse(d.toString('utf-8'))
 				} catch (e) {
 				  // An error has occured, handle it, by e.g. logging it
-				  console.log("could not parse data: " + e);
+				  logError("could not parse data: " + e);
 				}
 				
 				if (json) {
@@ -903,15 +902,15 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 							    alert: pushMessage
 							  };
 							  
-							console.log("sending notification to " + user);
+							logEvent("sending notification to " + user);
 							notificationHubService.apns.send([user], payload, 
 							  function(error){
 							    
 							    if(!error){
-							      console.log("notification sent");
+							      logEvent("notification sent");
 							    }
 							    else {
-								 	console.log("notification was not sent: " + error);
+								 	logEvent("notification was not sent: " + error);
 							    }
 							});	
 									
@@ -920,7 +919,7 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 						console.log(pushMessage);
 					}
 					else {
-						console.log("unsupported data");
+						logEvent("unsupported data");
 					}	
 				}	
 			}
@@ -928,21 +927,39 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 		
 		// This never happens
 		res.on('end', function(){
-			console.log("End received!");
+		
+			streams[user] = null;
+			logEvent("End received for user stream " + user);
 		});
 	
 		// But this does
 		res.on('close', function(){
-			console.log("Close received!");
+			
+			streams[user] = null;
+			logEvent("Close received for user stream " + user);
 		});
 		
 	}).on('error', function(e) {
-		console.error(e);
+		
+		streams[user] = null;
+		logError("Error received for user stream " + user + " error: " + JSON.stringify(e));
 	});
 	
 	req.end();
 	
 	return req;
+}
+
+function logEvent(event) {
+	
+	serverLog = serverLog + "event: " + event + "<br/>";
+	console.log("event: " + event);
+}
+
+function logError(error) {
+	
+	serverLog = serverLog + "ERROR: " + error + "<br/>";
+	console.log("ERROR: " + error);
 }
 
 // Config
@@ -990,6 +1007,41 @@ app.get('/streams/destroy', function (req, res) {
   else {
 	res.send('stream was not running');	  
   }
+  
+});
+
+app.get('/notifications/test', function (req, res) {
+  
+  var user = req.query.user;
+  
+  var payload={ 
+							    alert: "Test notification"
+							  };
+  
+  notificationHubService.apns.send([user], payload, 
+							  function(error){
+							    
+							    if(!error){
+							      console.log("notification sent");
+							      res.send('notificaiton sent');	  
+							    }
+							    else {
+								 	console.log("notification was not sent: " + error);
+								 	res.send("notification was not sent: " + error);
+							    }
+							});	
+  
+});
+
+app.get('/logs/show', function (req, res) {
+  
+  res.send(serverLog);	
+  
+});
+
+app.get('/streams/show', function (req, res) {
+  
+  res.send(JSON.stringify(streams));	
   
 });
 
