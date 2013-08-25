@@ -952,13 +952,13 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 
 function logEvent(event) {
 	
-	serverLog = serverLog + "event: " + event + "<br/>";
+	//serverLog = serverLog + "event: " + event + "<br/>";
 	console.log("event: " + event);
 }
 
 function logError(error) {
 	
-	serverLog = serverLog + "ERROR: " + error + "<br/>";
+	//serverLog = serverLog + "ERROR: " + error + "<br/>";
 	console.log("ERROR: " + error);
 }
 
@@ -1053,8 +1053,17 @@ app.get('/streams/show', function (req, res) {
   
 });
 
+app.get('/ping', function (req, res) {
+
+	console.log("ping request");
+  res.send("OK");
+  
+});
+
 // Launch server
 
 var port = process.env.PORT || 4242;
 
 app.listen(port);
+
+console.log("server is running");
