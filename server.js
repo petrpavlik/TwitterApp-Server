@@ -870,7 +870,7 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 		//console.log("statusCode: ", res.statusCode);
 		//console.log("headers: ", res.headers);
 		
-		logEvent("streaming for user " + user + " with status code " + statusCode);
+		logEvent("streaming for user " + user + " with status code " + res.statusCode);
 	
 		res.on('data', function(d) {
 			
@@ -980,12 +980,12 @@ app.get('/streams/create', function (req, res) {
   
   if (streams[user]) {
 	  
-	  console.log("Stream for '" + user + "' already running. Shutting it down.")
+	  logEvent("Stream for '" + user + "' already running. Shutting it down.")
 	  streams[user].abort();
 	  streams[user] = null;
   }
   
-  console.log("Starting stream for '" + user + "'.");
+  logEvent("Starting stream for '" + user + "'.");
   
   streams[user] = createUserStream(user, req.query.accessToken, req.query.accessTokenSecret);
   
@@ -998,13 +998,15 @@ app.get('/streams/destroy', function (req, res) {
   
   if (streams[user]) {
   	  
-	  console.log("Stream for '" + user + "' already running. Shutting it down.")
+	  logEvent("Destroying stream for '" + user + "'.")
 	  streams[user].abort();
 	  streams[user] = null;
 	  
 	  res.send('stream destroyed');
   }
   else {
+  	
+  	logEvent("Stream for user " + user + " is not running");
 	res.send('stream was not running');	  
   }
   
@@ -1040,8 +1042,14 @@ app.get('/logs/show', function (req, res) {
 });
 
 app.get('/streams/show', function (req, res) {
+
+	/*var outString = "";
+
+	for (stream in streams) {
+		
+	}
   
-  res.send(JSON.stringify(streams));	
+  res.send(""+JSON.stringify(streams));	*/
   
 });
 
