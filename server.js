@@ -901,7 +901,8 @@ function createUserStream(user, accessToken, accessTokenSecret) {
 						if (pushMessage && pushMessage.length) {
 							
 							var payload={ 
-							    alert: pushMessage
+							    alert: pushMessage,
+							    sound: "default"
 							  };
 							  
 							logEvent("sending notification to " + user);
