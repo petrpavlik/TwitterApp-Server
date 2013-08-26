@@ -781,11 +781,11 @@ function generatePushMessage(json, user) {
 	
 	//console.log("checking notification type");
 	
-	if (json.user.id_str == user) {
-			return null; //we only want to notify tweets made by other users
-	}
-	
 	if ('event' in json) {
+	
+		if (json.source.id_str == user) {
+			return null; //we only want to notify tweets made by other users
+		}
 	
 		//console.log("it's an event");
 		
