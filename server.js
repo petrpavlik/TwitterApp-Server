@@ -781,6 +781,10 @@ function generatePushMessage(json, user) {
 	
 	//console.log("checking notification type");
 	
+	if (json.user.id_str == user) {
+			return null; //we only want to notify tweets made by other users
+	}
+	
 	if ('event' in json) {
 	
 		//console.log("it's an event");
@@ -795,10 +799,10 @@ function generatePushMessage(json, user) {
 			message = "@" + json.source.screen_name + " unblocked @" + json.target.screen_name;
 		}
 		else if (event == "favorite") {
-			message = "@" + json.source.screen_name + " favorited \"" + json.target_object.text + '"';
+			message = "@" + json.source.screen_name + " favorited: " + json.target_object.text;
 		}
 		else if (event == "unfavorite") {
-			message = "@" + json.source.screen_name + " unfavorited \"" + json.target_object.text + '"';
+			message = "@" + json.source.screen_name + " unfavorited: " + json.target_object.text;
 		}
 		else if (event == "follow") {
 			message = "@" + json.source.screen_name + " started following @" + json.target.screen_name;
@@ -810,8 +814,6 @@ function generatePushMessage(json, user) {
 		return message;	
 	}
 	else if ('entities' in json) {
-	
-		//console.log("it can be a mention or a reply");
 	
 		var mentions = json.entities.user_mentions;
 		
@@ -835,7 +837,7 @@ function generatePushMessage(json, user) {
 					
 					//console.log("detected a mention");	
 					
-					return "@" + json.user.screen_name + " mentioned @" + mention.screen_name + ": " + json.text;
+					return "@" + json.user.screen_name + " mentioned: " + json.text;
 				}
 			}
 		}
